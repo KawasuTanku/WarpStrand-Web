@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WarpStrand</title>
+<style>
+  :root {
+    --blood: #8b1a1a;
+    --blood-bright: #c62828;
+    --ash: #c9c2b8;
+    --bone: #e8e2d6;
+    --bg: #0a0707;
+    --panel: #150e0e;
+    --panel-edge: #2a1414;
+    --ok: #6fcf6f;
+    --dim: #6b5d56;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--ash);
+    font-family: "Courier New", ui-monospace, monospace; font-size: 14px;
+  }
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ---- top bar ---- */
+  #topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--panel-edge);
+    color: var(--blood-bright); letter-spacing: 2px; font-weight: bold;
+  }
+  #topbar .who { color: var(--ash); letter-spacing: 0; font-weight: normal; }
+  #conn { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+  #conn.on  { color: var(--ok); border: 1px solid var(--ok); }
+  #conn.off { color: var(--blood-bright); border: 1px solid var(--blood); }
+
+  /* ---- main grid ---- */
+  #grid {
+    flex: 1; display: grid; grid-template-columns: 1.6fr 1fr;
+    grid-template-rows: 1fr auto; gap: 1px; background: var(--panel-edge);
+    min-height: 0;
+  }
+  .pane { background: var(--bg); padding: 10px 12px; overflow: auto; min-height: 0; }
+  #output { grid-column: 1 / 2; grid-row: 1 / 2; }
+  #room   { grid-column: 2 / 3; grid-row: 1 / 2; }
+  #stats  { grid-column: 1 / 3; grid-row: 2 / 3; border-top: 1px solid var(--panel-edge); }
+  h2 {
+    margin: 0 0 8px; font-size: 12px; letter-spacing: 2px; color: var(--blood-bright);
+    text-transform: uppercase; border-bottom: 1px dashed var(--panel-edge); padding-bottom: 4px;
+  }
+
+  /* ---- output log ---- */
+  #log div { white-space: pre-wrap; line-height: 1.4; }
+  #log .sys { color: var(--dim); }
+  #log .err { color: var(--blood-bright); }
+  #log .you { color: var(--bone); }
+
+  /* ---- room ---- */
+  #room .rname { color: var(--bone); font-size: 16px; margin-bottom: 4px; }
+  #room .rdesc { color: var(--ash); margin-bottom: 8px; }
+  #room .label { color: var(--blood-bright); }
+  .exit { color: var(--ok); cursor: pointer; text-decoration: underline dotted; }
+  .exit:hover { color: var(--bone); }
+  .here, .mob { color: var(--ash); }
+
+  /* ---- stats strip ---- */
+  #stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+  #stats .stat b { color: var(--blood-bright); }
+
+  /* ---- input ---- */
+  #inputbar {
+    display: flex; border-top: 1px solid var(--panel-edge); background: var(--panel);
+  }
+  #inputbar span { color: var(--blood-bright); padding: 8px 10px; }
+  #cmd {
+    flex: 1; background: var(--bg); border: 0; color: var(--bone); outline: none;
+    font-family: inherit; font-size: 14px; padding: 8px 4px;
+  }
+
+  /* ---- login overlay ---- */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.85);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #overlay .box {
+    background: var(--panel); border: 1px solid var(--panel-edge); padding: 24px 28px;
+    width: 320px; color: var(--ash);
+  }
+  #overlay h1 { color: var(--blood-bright); letter-spacing: 3px; margin: 0 0 14px; text-align: center; }
+  #overlay label { display: block; font-size: 12px; color: var(--dim); margin: 10px 0 3px; }
+  #overlay input {
+    width: 100%; background: var(--bg); border: 1px solid var(--panel-edge); color: var(--bone);
+    font-family: inherit; font-size: 14px; padding: 7px; outline: none;
+  }
+  #overlay button {
+    margin-top: 16px; width: 100%; background: var(--blood); color: var(--bone);
+    border: 0; padding: 9px; font-family: inherit; letter-spacing: 2px; cursor: pointer;
+  }
+  #overlay button:hover { background: var(--blood-bright); }
+  #overlay .msg { color: var(--blood-bright); min-height: 16px; font-size: 12px; margin-top: 8px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <span id="title">WARP · STRAND</span>
+    <span class="who" id="who"></span>
+    <span id="conn" class="off">offline</span>
+  </div>
+
+  <div id="grid">
+    <div class="pane" id="output"><h2>Log</h2><div id="log"></div></div>
+    <div class="pane" id="room"><h2>Room</h2><div id="roombody"></div></div>
+    <div class="pane" id="stats"><h2>Stats</h2><div id="statsbody"></div></div>
+  </div>
+
+  <div id="inputbar">
+    <span>&gt;</span>
+    <input id="cmd" autocomplete="off" placeholder="type a command (north, look, stats, quit)…" disabled />
+  </div>
+</div>
+
+<div id="overlay">
+  <div class="box">
+    <h1>WARP · STRAND</h1>
+    <label>Name (or 'new' to create)</label>
+    <input id="li-name" autocomplete="off" placeholder="your name" />
+    <label>Password</label>
+    <input id="li-pass" type="password" placeholder="••••••" />
+    <button id="li-go">ENTER</button>
+    <div class="msg" id="li-msg"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+"use strict";
+
+const CFG = window.WARPSTRAND_CONFIG || { WS_URL: "ws://127.0.0.1:4000",
+                                          TITLE: "WarpStrand", PING_INTERVAL_MS: 30000 };
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log"), roomEl = $("roombody"), statsEl = $("statsbody");
+const inputEl = $("cmd"), overlay = $("overlay"), connEl = $("conn");
+
+let ws = null;
+let loggedIn = false;
+const history = [];
+let histIdx = -1;
+
+function pushLine(text, cls) {
+  const d = document.createElement("div");
+  if (cls) d.className = cls;
+  d.textContent = text;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setConn(on) {
+  connEl.className = on ? "on" : "off";
+  connEl.textContent = on ? "online" : "offline";
+}
+
+function connect() {
+  setConn(false);
+  pushLine("connecting to " + CFG.WS_URL + " …", "sys");
+  ws = new WebSocket(CFG.WS_URL);
+
+  ws.onopen = () => { setConn(true); };
+
+  ws.onmessage = (ev) => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch { return; }
+    route(m);
+  };
+
+  ws.onclose = () => {
+    setConn(false);
+    pushLine("— connection closed —", "sys");
+    inputEl.disabled = true;
+  };
+
+  ws.onerror = () => { pushLine("connection error", "err"); };
+
+  // app-level ping so the 120s idle watchdog doesn't drop an open tab
+  setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN)
+      ws.send(JSON.stringify({ cmd: "ping", t: Date.now() }));
+  }, CFG.PING_INTERVAL_MS);
+}
+
+// ---- message router (mirrors the Textual TUI's frame handling) ----
+function route(m) {
+  const ch = m.ch;
+  if (ch === "hello") {
+    $("title").textContent = "WARP · STRAND";
+    (m.lines || []).forEach((l) => pushLine(l, "sys"));
+    pushLine((m.federated ? "[federated]" : "[standalone]") + " world: " + (m.world_name || "?"), "sys");
+    return;
+  }
+  if (ch === "line") {
+    pushLine(m.text, m.text.startsWith("*") ? "sys" : "");
+    return;
+  }
+  if (ch === "error") { pushLine("! " + m.text, "err"); return; }
+  if (ch === "room")    { renderRoom(m); return; }
+  if (ch === "stats")   { renderStats(m); return; }
+  if (ch === "mail")    { pushLine("[mail] " + (m.event || ""), "sys"); return; }
+  if (ch === "pong")    { return; }
+  // Server asks a question mid-flow (e.g. the password prompt during login,
+  // or the "New name:" prompt when creating an account). The prompt frame is
+  // structured; we answer it with a normal {"line": ...} (the WS handler reads
+  // only the `line` field inbound, so field type is cosmetic on the wire).
+  if (ch === "prompt")  { handlePrompt(m); return; }
+  // unknown frame: surface it so the protocol can't silently drift
+  pushLine("[frame:" + ch + "] " + JSON.stringify(m), "sys");
+}
+
+// ---- login prompt handling ----
+function handlePrompt(m) {
+  // Normal login: server sends a "Password:" prompt after the name. The web
+  // overlay captured the password up front, so answer it automatically.
+  if (loginState && loginState.step === "name" && /password/i.test(m.text || "")) {
+    ws.send(JSON.stringify({ line: loginState.pass }));
+    loginState.step = "pass";
+    $("li-msg").textContent = "logged in";
+    return;
+  }
+  // Account creation: server asks "New name:" then "New password:". We already
+  // have both from the overlay, so answer each prompt as it arrives.
+  if (loginState && loginState.step === "create") {
+    if (/name/i.test(m.text || "")) {
+      ws.send(JSON.stringify({ line: loginState.name })); return;
+    }
+    if (/password/i.test(m.text || "")) {
+      ws.send(JSON.stringify({ line: loginState.pass }));
+      loginState.step = "pass";
+      $("li-msg").textContent = "creating account…"; return;
+    }
+  }
+  // Fallback: show the prompt in the log so nothing is silently dropped.
+  pushLine("? " + (m.text || "(prompt)"), "sys");
+}
+
+function renderRoom(m) {
+  let h = `<div class="rname">${escapeHtml(m.name || "?")}</div>`;
+  h += `<div class="rdesc">${escapeHtml(m.description || "")}</div>`;
+  if (m.exits && m.exits.length) {
+    h += `<div><span class="label">Exits:</span> `;
+    h += m.exits.map((e) =>
+      `<span class="exit" data-dir="${escapeHtml(e.dir)}">${escapeHtml(e.name)} → ${escapeHtml(e.to)}</span>`
+    ).join("  ");
+    h += `</div>`;
+  }
+  if (m.here && m.here.length) {
+    h += `<div class="label">Here:</div>` + m.here.map((n) => `<div class="here">${escapeHtml(n)}</div>`).join("");
+  }
+  if (m.creatures && m.creatures.length) {
+    h += `<div class="label">Creatures:</div>` + m.creatures.map((c) => `<div class="mob">${escapeHtml(c.name)} (${c.hp}/${c.maxhp})</div>`).join("");
+  }
+  roomEl.innerHTML = h;
+  roomEl.querySelectorAll(".exit").forEach((el) =>
+    el.addEventListener("click", () => send(el.dataset.dir)));
+}
+
+function renderStats(m) {
+  const f = (k, v) => `<span class="stat"><b>${k}:</b> ${escapeHtml(String(v))}</span>`;
+  const parts = [
+    f("HP", m.hp + "/" + m.maxhp),
+    f("Loc", m.room),
+    f("Lv", m.level),
+    f("XP", m.xp + (m.xp_next != null ? " (+" + m.xp_next + ")" : "")),
+    f("Str", m.str), f("Con", m.con), f("Dex", m.dex), f("Mag", m.magic),
+    f("Gold", m.gold),
+    f("Wpn", m.weapon), f("Arm", m.armor),
+    f("Ring", m.ring_used + "/" + m.ring_capacity),
+  ];
+  if (m.stat_points) parts.push(f("StatPts", m.stat_points));
+  statsEl.innerHTML = parts.join("");
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---- command send ----
+function send(line) {
+  line = (line || "").trim();
+  if (!line || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!loggedIn) return; // pre-login is handled by the overlay
+  ws.send(JSON.stringify({ line: line }));
+  pushLine("> " + line, "you");
+  history.push(line); histIdx = history.length;
+}
+
+inputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { send(inputEl.value); inputEl.value = ""; }
+  else if (e.key === "ArrowUp")   { if (histIdx > 0) { histIdx--; inputEl.value = history[histIdx]; } e.preventDefault(); }
+  else if (e.key === "ArrowDown") { if (histIdx < history.length - 1) { histIdx++; inputEl.value = history[histIdx]; } else { histIdx = history.length; inputEl.value = ""; } e.preventDefault(); }
+});
+
+// ---- login overlay ----
+function doLogin() {
+  const name = $("li-name").value.trim();
+  const pass = $("li-pass").value;
+  if (!name) { $("li-msg").textContent = "enter a name"; return; }
+  $("li-msg").textContent = "logging in…";
+  // Wire flow: send the name first. The server then prompts (structured
+  // `prompt` frame) for the password — or, for "new", for "New name:" then
+  // "New password:". handlePrompt() answers each as it arrives; a `room`
+  // frame means we're in.
+  loginState = { name, pass, step: name.toLowerCase() === "new" ? "create" : "name" };
+  ws.send(JSON.stringify({ line: name }));
+}
+
+let loginState = null;
+// When a `room` frame arrives during the password step, login succeeded.
+const _origRoute = route;
+route = function (m) {
+  _origRoute(m);
+  if (loginState && loginState.step === "pass" && m.ch === "room") {
+    loggedIn = true;
+    loginState = null;
+    $("who").textContent = "as " + $("li-name").value.trim();
+    overlay.classList.add("hidden");
+    inputEl.disabled = false;
+    inputEl.focus();
+  }
+};
+
+$("li-go").addEventListener("click", doLogin);
+$("li-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+$("li-name").addEventListener("keydown", (e) => { if (e.key === "Enter") $("li-pass").focus(); });
+
+connect();
+</script>
+</body>
+</html>
