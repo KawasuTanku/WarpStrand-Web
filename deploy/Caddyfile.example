@@ -1,0 +1,43 @@
+# Caddy v2 snippet for hosting WarpStrand-Web + the game WebSocket.
+#
+# Layout:
+#   * One public site (play.warpstrand.example) serves the static web client
+#     (index.html / config.js) AND proxies the game WebSocket at /ws to the
+#     WarpStrand-Server game socket (default 127.0.0.1:4000).
+#   * Caddy terminates TLS (wss://) and obtains a Let's Encrypt cert
+#     automatically (DNS-01 or HTTP-01 -- use DNS-01 if ports 80/443 are busy).
+#   * The browser page origin is https://play.warpstrand.example, so the
+#     server's allowed_origins in server.yaml must list exactly that:
+#
+#       allowed_origins:
+#         - "https://play.warpstrand.example"
+#
+#     (set on the WarpStrand-Server; see its server.yaml.example.)
+#
+# Point the web client's config.js WS_URL at the proxied path:
+#     WS_URL: "wss://play.warpstrand.example/ws"
+
+play.warpstrand.example {
+    # Where the WarpStrand-Web static files live (this repo, served by Caddy).
+    root * /var/www/warpstrand-web
+    file_server
+
+    # Game WebSocket: proxy /ws -> WarpStrand-Server game socket.
+    # `websocket` is built into Caddy's reverse_proxy for WS upgrades.
+    @gamews path /ws
+    reverse_proxy @gamews 127.0.0.1:4000 {
+        # Forward the real client Origin so the server's allow-list can enforce it.
+        header_up Origin "https://play.warpstrand.example"
+        # The subprotocol handshake (if used) is forwarded automatically.
+    }
+
+    # Optional: lock the admin stats socket to a separate internal site or
+    # unix socket; never expose it publicly. The game socket above is the only
+    # player-facing endpoint.
+
+    # Logs / errors
+    log {
+        output stdout
+        level INFO
+    }
+}

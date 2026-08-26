@@ -31,16 +31,24 @@ prompts `Password:` → send password → a `room` frame means you're in.
    cd WarpStrand-Server
    WARPSTRAND_CONFIG=warpstrand_server/seed_config.yaml .venv-srv/bin/python -m warpstrand_server
    ```
-2. Serve these static files (any static server works). From this repo:
+2. Serve these static files. From this repo:
    ```bash
    python3 -m http.server 8080
    ```
-3. Open <http://localhost:8080/> and log in (or `new` to create an account).
+   For production, put them behind a TLS-terminating reverse proxy (Caddy/Nginx)
+   that also proxies the game WebSocket. See `deploy/Caddyfile.example`.
 
-By default `config.js` points `WS_URL` at `ws://127.0.0.1:4000`. Edit it to
-point at a `wss://` endpoint when hosting behind a TLS-terminating reverse proxy
-(Caddy/Nginx), which is also where you'd expose the game socket as a path like
-`/game` if you want proxy routing.
+3. Point `config.js` `WS_URL` at the game socket (direct, or the proxied path
+   like `wss://play.warpstrand.example/ws`).
+
+## Production hosting (Caddy)
+
+`deploy/Caddyfile.example` serves the static client and reverse-proxies the
+game WebSocket (`/ws` -> `127.0.0.1:4000`) with TLS terminated by Caddy. Set
+the server's `allowed_origins` (in `server.yaml`) to the web page's origin,
+e.g. `"https://play.warpstrand.example"`, so the server's Origin allow-list
+(CSRF/credential-harvest defense) permits the web client while rejecting
+embedded cross-site sockets. The no-Origin Textual TUI is always allowed.
 
 ## Files
 
