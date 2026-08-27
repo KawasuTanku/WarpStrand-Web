@@ -14,7 +14,7 @@ const sent = [];
 function makeEl() {
   const el = {
     value: "", textContent: "", innerHTML: "", disabled: false,
-    scrollTop: 0, scrollHeight: 0, __lines: [],
+    scrollTop: 0, scrollHeight: 0, clientHeight: 0, __lines: [],
     classList: { add() {}, remove() {}, contains() { return false; } },
     addEventListener() {}, focus() {}, dataset: {},
     appendChild(c) { if (c && c.textContent) el.__lines.push(c.textContent); },
@@ -115,8 +115,15 @@ routeMsg({ ch: "stats", room: "Town Square", hp: 100, maxhp: 100, level: 2, xp: 
   ring_full: true, ring_used: 8, ring_capacity: 8 });
 assert(/Ring: Full \(8\/8\)/.test(els["statsbody"].innerHTML), "stats shows ring full state");
 
-// ---------- TEST: federation frame no longer dumps JSON ----------
-console.log("\n=== federation frame not dumped as JSON ===");
-// (covered by federation test above routing to fedbody, not [frame:federation])
-
-console.log("\nALL WEB-UI (TUI MIRROR) TESTS PASSED");
+// ---------- TEST: auto-scroll on new chat lines ----------
+console.log("\n=== auto-scroll ===");
+// simulate a scrolled-up reader (not near bottom) -> should NOT force scroll
+els["log"].scrollHeight = 1000; els["log"].scrollTop = 100; els["log"].clientHeight = 200;
+routeMsg({ ch: "line", text: "new line while scrolled up" });
+// nearBottom computed as 1000 - 100 - 200 = 700 < 40 -> false -> no forced scroll
+assert(els["log"].scrollTop === 100, "does not yank scroll when reader is scrolled up");
+// simulate reader at bottom -> should pin to bottom
+els["log"].scrollHeight = 1000; els["log"].scrollTop = 800; els["log"].clientHeight = 200;
+routeMsg({ ch: "line", text: "new line at bottom" });
+// nearBottom = 1000 - 800 - 200 = 0 < 40 -> true -> scrollTop set to scrollHeight
+assert(els["log"].scrollTop === 1000, "auto-scrolls to bottom when reader is at bottom");

@@ -61,7 +61,10 @@
   #roomcol .pane { height: 100%; }
   #lower { flex: 1 1 50%; display: flex; flex-direction: column; gap: 1px; background: var(--panel-edge); min-height: 0; }
   #fedmid { flex: 1 1 50%; }
-  #bottom { flex: 1 1 50%; }
+  #bottom { flex: 1 1 50%; display: flex; flex-direction: column; }
+  #bottom #log { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  #fedmid { flex: 1 1 50%; display: flex; flex-direction: column; }
+  #fedmid #fedlog { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
 
   #rightcol #map { flex: 0 0 auto; }
   #rightcol #mobs { flex: 1 1 auto; }
@@ -221,15 +224,17 @@ function pushLine(text, cls) {
   const d = document.createElement("div");
   if (cls) d.className = cls;
   d.textContent = text;
+  const nearBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
   logEl.appendChild(d);
-  logEl.scrollTop = logEl.scrollHeight;
+  if (nearBottom) logEl.scrollTop = logEl.scrollHeight;
 }
 function pushFed(text, cls) {
   const d = document.createElement("div");
   if (cls) d.className = cls;
   d.textContent = text;
+  const nearBottom = fedEl.scrollHeight - fedEl.scrollTop - fedEl.clientHeight < 40;
   fedEl.appendChild(d);
-  fedEl.scrollTop = fedEl.scrollHeight;
+  if (nearBottom) fedEl.scrollTop = fedEl.scrollHeight;
 }
 function setConn(on) {
   connEl.className = on ? "on" : "off";
