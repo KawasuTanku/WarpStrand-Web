@@ -15,6 +15,9 @@
     --panel-edge: #2a1414;
     --ok: #6fcf6f;
     --dim: #6b5d56;
+    --accent: #c62828;
+    --mail: #5cc8ff;
+    --warn: #ffae00;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -26,7 +29,7 @@
   /* ---- top bar ---- */
   #topbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--panel-edge);
+    padding: 4px 12px; background: var(--panel); border-bottom: 1px solid var(--panel-edge);
     color: var(--blood-bright); letter-spacing: 2px; font-weight: bold;
   }
   #topbar .who { color: var(--ash); letter-spacing: 0; font-weight: normal; }
@@ -34,38 +37,61 @@
   #conn.on  { color: var(--ok); border: 1px solid var(--ok); }
   #conn.off { color: var(--blood-bright); border: 1px solid var(--blood); }
 
-  /* ---- main grid ---- */
-  #grid {
-    flex: 1; display: grid; grid-template-columns: 1.6fr 1fr;
-    grid-template-rows: 1fr auto; gap: 1px; background: var(--panel-edge);
-    min-height: 0;
+  /* ---- 3-column body (mirrors the Textual TUI) ---- */
+  #body {
+    flex: 1; display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    gap: 1px; background: var(--panel-edge); min-height: 0;
   }
-  .pane { background: var(--bg); padding: 10px 12px; overflow: auto; min-height: 0; }
-  #output { grid-column: 1 / 2; grid-row: 1 / 2; }
-  #room   { grid-column: 2 / 3; grid-row: 1 / 2; }
-  #stats  { grid-column: 1 / 3; grid-row: 2 / 3; border-top: 1px solid var(--panel-edge); }
-  h2 {
-    margin: 0 0 8px; font-size: 12px; letter-spacing: 2px; color: var(--blood-bright);
-    text-transform: uppercase; border-bottom: 1px dashed var(--panel-edge); padding-bottom: 4px;
+  .col { display: flex; flex-direction: column; gap: 1px; background: var(--panel-edge); min-height: 0; }
+  .pane {
+    background: var(--bg); padding: 8px 10px; overflow: auto; min-height: 0;
+    border: 1px solid var(--panel-edge); margin: 1px;
   }
+  .pane h2 {
+    margin: 0 0 6px; font-size: 12px; letter-spacing: 2px; color: var(--blood-bright);
+    text-transform: uppercase; border-bottom: 1px dashed var(--panel-edge); padding-bottom: 3px;
+  }
+  #sidecol #stats { flex: 0 0 auto; }
+  #sidecol #mail, #sidecol #federation { flex: 0 0 auto; }
+  #sidecol #social { flex: 1 1 auto; }
 
-  /* ---- output log ---- */
-  #log div { white-space: pre-wrap; line-height: 1.4; }
+  #main { display: flex; flex-direction: column; gap: 1px; background: var(--panel-edge); min-height: 0; }
+  #roomcol { flex: 1 1 50%; }
+  #roomcol .pane { height: 100%; }
+  #lower { flex: 1 1 50%; display: flex; flex-direction: column; gap: 1px; background: var(--panel-edge); min-height: 0; }
+  #fedmid { flex: 1 1 50%; }
+  #bottom { flex: 1 1 50%; }
+
+  #rightcol #map { flex: 0 0 auto; }
+  #rightcol #mobs { flex: 1 1 auto; }
+  #rightcol #commands { flex: 0 0 auto; }
+
+  /* ---- log / chat ---- */
+  #log div, #fedlog div { white-space: pre-wrap; line-height: 1.4; }
   #log .sys { color: var(--dim); }
   #log .err { color: var(--blood-bright); }
   #log .you { color: var(--bone); }
+  #fedlog .global { color: var(--accent); }
+  #fedlog .mail { color: var(--mail); }
+  #fedlog .evac { color: var(--warn); font-weight: bold; }
 
   /* ---- room ---- */
   #room .rname { color: var(--bone); font-size: 16px; margin-bottom: 4px; }
-  #room .rdesc { color: var(--ash); margin-bottom: 8px; }
+  #room .rdesc { color: var(--ash); margin-bottom: 8px; white-space: pre-wrap; }
   #room .label { color: var(--blood-bright); }
   .exit { color: var(--ok); cursor: pointer; text-decoration: underline dotted; }
   .exit:hover { color: var(--bone); }
   .here, .mob { color: var(--ash); }
+  #room .art { color: var(--accent); white-space: pre; font-size: 13px; margin: 6px 0; }
 
   /* ---- stats strip ---- */
-  #stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
   #stats .stat b { color: var(--blood-bright); }
+
+  /* ---- map / exits ---- */
+  #map .here-line { color: var(--accent); }
+  #map .exit-line { color: var(--ash); }
+  #map .exit-dir { color: var(--blood-bright); font-weight: bold; }
 
   /* ---- input ---- */
   #inputbar {
@@ -97,13 +123,19 @@
     border: 0; padding: 9px; font-family: inherit; letter-spacing: 2px; cursor: pointer;
   }
   #overlay button:hover { background: var(--blood-bright); }
-  #overlay .msg { color: var(--blood-bright); min-height: 16px; font-size: 12px; margin-top: 8px; }
   #overlay .btns { display: flex; gap: 10px; }
-  #overlay button { margin-top: 16px; }
   #overlay #li-new { background: transparent; color: var(--blood-bright); border: 1px solid var(--blood); }
   #overlay #li-new:hover { background: var(--blood); color: var(--bone); }
   #overlay .hint { color: var(--dim); font-size: 11px; margin-top: 10px; line-height: 1.3; }
+  #overlay .msg { color: var(--blood-bright); min-height: 16px; font-size: 12px; margin-top: 8px; }
   .hidden { display: none !important; }
+
+  /* responsive fallbacks for narrow screens */
+  @media (max-width: 1000px) {
+    #body { grid-template-columns: 1fr; grid-auto-rows: min-content; }
+    #sidecol, #rightcol { flex-direction: column; }
+    .pane { max-height: 240px; }
+  }
 </style>
 </head>
 <body>
@@ -114,15 +146,37 @@
     <span id="conn" class="off">offline</span>
   </div>
 
-  <div id="grid">
-    <div class="pane" id="output"><h2>Log</h2><div id="log"></div></div>
-    <div class="pane" id="room"><h2>Room</h2><div id="roombody"></div></div>
-    <div class="pane" id="stats"><h2>Stats</h2><div id="statsbody"></div></div>
+  <div id="body">
+    <!-- LEFT: stats / mail / federation / social -->
+    <div class="col" id="sidecol">
+      <div class="pane" id="stats"><h2>Stats</h2><div id="statsbody">Location: --<br>HP --/--  Level --  XP --<br>STR --  CON --  DEX --  MAG --<br>Stat points: --<br>Gold: --<br>Weapon: --<br>Armor: --<br>Ring: --<br>XP next: --</div></div>
+      <div class="pane" id="mail"><h2>Mail</h2><div id="mailbody">New: -<br>Read: -</div></div>
+      <div class="pane" id="federation"><h2>Federation</h2><div id="fedbody">Mode: -<br>You: -<br>Server: -<br>Ping: -<br>Nodes: -</div></div>
+      <div class="pane" id="social"><h2>Friends</h2><div id="socialbody">-</div></div>
+    </div>
+
+    <!-- CENTER: room (top) + fed chat / server chat (bottom) -->
+    <div class="col" id="main">
+      <div class="col" id="roomcol">
+        <div class="pane" id="room"><h2>Room</h2><div id="roombody"></div></div>
+      </div>
+      <div class="col" id="lower">
+        <div class="pane" id="fedmid"><h2>Federation Chat</h2><div id="fedlog"></div></div>
+        <div class="pane" id="bottom"><h2>Log</h2><div id="log"></div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: map / mobs / commands -->
+    <div class="col" id="rightcol">
+      <div class="pane" id="map"><h2>Map</h2><div id="mapbody">(no location)</div></div>
+      <div class="pane" id="mobs"><h2>Mobs</h2><div id="mobbody">-</div></div>
+      <div class="pane" id="commands"><h2>Commands</h2><div id="cmdsbody"></div></div>
+    </div>
   </div>
 
   <div id="inputbar">
     <span>&gt;</span>
-    <input id="cmd" autocomplete="off" placeholder="type a command (north, look, stats, quit)…" disabled />
+    <input id="cmd" autocomplete="off" placeholder="command (look, n, say hi, who, inv, stats, help, quit)" disabled />
   </div>
 </div>
 
@@ -150,13 +204,18 @@ const CFG = window.WARPSTRAND_CONFIG || { WS_URL: "ws://127.0.0.1:4000",
                                           TITLE: "WarpStrand", PING_INTERVAL_MS: 30000 };
 
 const $ = (id) => document.getElementById(id);
-const logEl = $("log"), roomEl = $("roombody"), statsEl = $("statsbody");
+const logEl = $("log"), fedEl = $("fedlog"), roomEl = $("roombody");
 const inputEl = $("cmd"), overlay = $("overlay"), connEl = $("conn");
 
 let ws = null;
 let loggedIn = false;
 const history = [];
 let histIdx = -1;
+let pingMs = null;
+
+// federation/social state (mirrors the TUI panes)
+let fedState = { federated: false, world: "", hub: false, nodes: null };
+let social = null;
 
 function pushLine(text, cls) {
   const d = document.createElement("div");
@@ -165,7 +224,13 @@ function pushLine(text, cls) {
   logEl.appendChild(d);
   logEl.scrollTop = logEl.scrollHeight;
 }
-
+function pushFed(text, cls) {
+  const d = document.createElement("div");
+  if (cls) d.className = cls;
+  d.textContent = text;
+  fedEl.appendChild(d);
+  fedEl.scrollTop = fedEl.scrollHeight;
+}
 function setConn(on) {
   connEl.className = on ? "on" : "off";
   connEl.textContent = on ? "online" : "offline";
@@ -175,24 +240,18 @@ function connect() {
   setConn(false);
   pushLine("connecting to " + CFG.WS_URL + " …", "sys");
   ws = new WebSocket(CFG.WS_URL);
-
   ws.onopen = () => { setConn(true); };
-
   ws.onmessage = (ev) => {
     let m;
     try { m = JSON.parse(ev.data); } catch { return; }
     route(m);
   };
-
   ws.onclose = () => {
     setConn(false);
     pushLine("— connection closed —", "sys");
     inputEl.disabled = true;
   };
-
   ws.onerror = () => { pushLine("connection error", "err"); };
-
-  // app-level ping so the 120s idle watchdog doesn't drop an open tab
   setInterval(() => {
     if (ws && ws.readyState === WebSocket.OPEN)
       ws.send(JSON.stringify({ cmd: "ping", t: Date.now() }));
@@ -203,55 +262,128 @@ function connect() {
 function route(m) {
   const ch = m.ch;
   if (ch === "hello") {
-    $("title").textContent = "WARP · STRAND";
+    fedState.federated = !!m.federated;
+    fedState.world = m.world_name || "";
+    fedState.hub = !!m.hub_connected;
+    renderFederation();
     (m.lines || []).forEach((l) => pushLine(l, "sys"));
     pushLine((m.federated ? "[federated]" : "[standalone]") + " world: " + (m.world_name || "?"), "sys");
     return;
   }
-  if (ch === "line") {
-    pushLine(m.text, m.text.startsWith("*") ? "sys" : "");
-    return;
-  }
+  if (ch === "line") { pushLine(m.text, m.text.startsWith("*") ? "sys" : ""); return; }
   if (ch === "error") { pushLine("! " + m.text, "err"); return; }
-  if (ch === "room")    { renderRoom(m); return; }
+  if (ch === "room")    { renderRoom(m); renderCommands(m); return; }
   if (ch === "stats")   { renderStats(m); return; }
-  if (ch === "mail")    { pushLine("[mail] " + (m.event || ""), "sys"); return; }
-  if (ch === "fed") {
-    if (m.kind === "global" && m.text) {
-      // Federation global chat (FEDERATION.md §9): "[global] name@world: msg"
-      pushLine(m.text, "sys"); return;
-    }
-    // Other federation events (mail notice, friend, notify) — show compactly.
-    if (m.text) { pushLine("[fed] " + m.text, "sys"); return; }
-    return;
-  }
-  if (ch === "pong")    { return; }
-  // Server asks a question mid-flow (e.g. the password prompt during login,
-  // or the "New name:" prompt when creating an account). The prompt frame is
-  // structured; we answer it with a normal {"line": ...} (the WS handler reads
-  // only the `line` field inbound, so field type is cosmetic on the wire).
+  if (ch === "inv")     { renderInv(m); return; }
+  if (ch === "mail")    { renderMail(m); return; }
+  if (ch === "social")  { renderSocial(m); return; }
+  if (ch === "federation") { handleFederation(m); return; }
+  if (ch === "fed")     { handleFed(m); return; }
+  if (ch === "redirect") { handleRedirect(m); return; }
+  if (ch === "pong")    { handlePong(m); return; }
   if (ch === "prompt")  { handlePrompt(m); return; }
-  // unknown frame: surface it so the protocol can't silently drift
   pushLine("[frame:" + ch + "] " + JSON.stringify(m), "sys");
+}
+
+// ---- federation status frame (server snapshot) ----
+function handleFederation(m) {
+  fedState.federated = (m.mode === "federated");
+  fedState.world = m.world || m.world_name || fedState.world;
+  fedState.hub = !!m.hub_connected;
+  fedState.nodes = m.nodes;
+  renderFederation();
+}
+function renderFederation() {
+  const mode = fedState.federated ? "Federated" : "Standalone";
+  const server = fedState.world || "?";
+  const ping = pingMs != null ? pingMs + " ms" : "-";
+  const nodes = (fedState.federated && fedState.hub)
+    ? (fedState.nodes != null ? String(fedState.nodes) : "-") : "(n/a)";
+  const you = (loginName() && fedState.world) ? loginName() + "@" + fedState.world : "-";
+  $("fedbody").innerHTML =
+    `Mode: ${mode}<br>You: ${you}<br>Server: ${server}<br>Ping: ${ping}<br>Nodes: ${nodes}`;
+}
+function loginName() {
+  const v = $("li-name").value.trim();
+  return loggedIn ? (window._who || v) : v;
+}
+
+// ---- federation chat (global) ----
+function handleFed(m) {
+  const kind = m.kind || "global";
+  if (kind === "mail") pushFed(m.text || "", "mail");
+  else if (kind === "evacuate") pushFed((m.mode === "dead-source" ? "[! SOURCE OFFLINE — ITEM LIST UNKNOWN] " : "") + (m.text || ""), "evac");
+  else pushFed(m.text || "", "global");
+}
+
+// ---- mail summary ----
+function renderMail(m) {
+  if (!m || m.event === "unavailable") { $("mailbody").innerHTML = "New: -<br>Read: -"; return; }
+  const unread = parseInt(m.unread || 0, 10);
+  const total = parseInt(m.total || 0, 10);
+  const read = Math.max(total - unread, 0);
+  $("mailbody").innerHTML = `New: ${unread}<br>Read: ${read}`;
+}
+
+// ---- social / friends ----
+function renderSocial(m) {
+  if (!m || m.event === "unavailable") { $("socialbody").textContent = "-"; return; }
+  social = { friends: m.friends || [], requests: m.requests || [], world: m.world || "" };
+  const lines = ["Friends:"];
+  if (!social.friends.length && !social.requests.length)
+    lines.push("  (none — 'friend add <name[@world]>')");
+  for (const r of social.requests) {
+    const w = r.owner_world || "";
+    lines.push(`  ? ${r.owner_user || "?"}@${w} (incoming)`);
+  }
+  for (const f of social.friends) {
+    const dot = f.online ? "●" : "○";
+    const w = f.friend_world || "";
+    lines.push(`  ${dot} ${f.friend_user || "?"}@${w}`);
+  }
+  $("socialbody").textContent = lines.join("\n");
+}
+
+// ---- ping / RTT ----
+function handlePong(m) {
+  const ts = m.t;
+  if (typeof ts === "number") {
+    pingMs = Math.round((Date.now() - ts) * 100) / 100;
+    renderFederation();
+  }
+}
+
+// ---- portal redirect ----
+function handleRedirect(m) {
+  const host = m.host || (ws && ws.url ? new URL(ws.url).hostname : "host");
+  pushLine(`[redirect -> ${m.host}:${m.port}]`, "sys");
+  const scheme = m.tls ? "wss" : "ws";
+  const url = `${scheme}://${m.host}:${m.port}`;
+  // tear down and reconnect to the new world, presenting the token as first line
+  try { ws.close(); } catch {}
+  setTimeout(() => {
+    ws = new WebSocket(url);
+    ws.onopen = () => {
+      setConn(true);
+      if (m.token) ws.send(JSON.stringify({ line: m.token }));
+    };
+    ws.onmessage = (ev) => { let x; try { x = JSON.parse(ev.data); } catch { return; } route(x); };
+    ws.onclose = () => { setConn(false); pushLine("— connection closed —", "sys"); inputEl.disabled = true; };
+    ws.onerror = () => { pushLine("connection error", "err"); };
+  }, 200);
 }
 
 // ---- login prompt handling ----
 function handlePrompt(m) {
-  // Normal login: server sends a "Password:" prompt after the name. The web
-  // overlay captured the password up front, so answer it automatically.
   if (loginState && loginState.step === "name" && /password/i.test(m.text || "")) {
     ws.send(JSON.stringify({ line: loginState.pass }));
     loginState.step = "pass";
     $("li-msg").textContent = "logged in";
     return;
   }
-  // Account creation: server asks "New name:" then "New password:". We already
-  // have both from the overlay, so answer each prompt as it arrives.
   if (loginState && loginState.step === "create") {
     if (/name/i.test(m.text || "")) {
       if (loginState.sentName) {
-        // Server re-asked the name => the one we sent was rejected (taken /
-        // too long). Stop auto-answering and let the user correct the field.
         $("li-msg").textContent = "name rejected — edit it and click NEW USER again";
         loginState.step = "create-done";
         return;
@@ -266,7 +398,6 @@ function handlePrompt(m) {
       $("li-msg").textContent = "creating account…"; return;
     }
   }
-  // Fallback: show the prompt in the log so nothing is silently dropped.
   pushLine("? " + (m.text || "(prompt)"), "sys");
 }
 
@@ -281,7 +412,7 @@ function renderRoom(m) {
     h += `</div>`;
   }
   if (m.here && m.here.length) {
-    h += `<div class="label">Here:</div>` + m.here.map((n) => `<div class="here">${escapeHtml(n)}</div>`).join("");
+    h += `<div class="label">Players:</div>` + m.here.map((n) => `<div class="here">${escapeHtml(n)}</div>`).join("");
   }
   if (m.creatures && m.creatures.length) {
     h += `<div class="label">Creatures:</div>` + m.creatures.map((c) => `<div class="mob">${escapeHtml(c.name)} (${c.hp}/${c.maxhp})</div>`).join("");
@@ -289,34 +420,85 @@ function renderRoom(m) {
   roomEl.innerHTML = h;
   roomEl.querySelectorAll(".exit").forEach((el) =>
     el.addEventListener("click", () => send(el.dataset.dir)));
+  renderMap(m);
+  renderMobs(m.creatures || []);
 }
 
 function renderStats(m) {
   const f = (k, v) => `<span class="stat"><b>${k}:</b> ${escapeHtml(String(v))}</span>`;
+  const ring = m.ring_full ? "Full" : "Available";
+  const ringTxt = `Ring: ${ring}` + (m.ring_used != null ? ` (${m.ring_used}/${m.ring_capacity})` : "");
   const parts = [
-    f("HP", m.hp + "/" + m.maxhp),
     f("Loc", m.room),
+    f("HP", m.hp + "/" + m.maxhp),
     f("Lv", m.level),
     f("XP", m.xp + (m.xp_next != null ? " (+" + m.xp_next + ")" : "")),
     f("Str", m.str), f("Con", m.con), f("Dex", m.dex), f("Mag", m.magic),
     f("Gold", m.gold),
     f("Wpn", m.weapon), f("Arm", m.armor),
-    f("Ring", m.ring_used + "/" + m.ring_capacity),
+    f("StatPts", m.stat_points),
+    `<span class="stat"><b>${ringTxt}</b></span>`,
   ];
-  if (m.stat_points) parts.push(f("StatPts", m.stat_points));
-  statsEl.innerHTML = parts.join("");
+  $("statsbody").innerHTML = parts.join("<br>");
+}
+
+function renderInv(m) {
+  pushLine(`== Ring (${m.used}/${m.capacity} slots) ==`);
+  for (const it of (m.items || [])) {
+    const tag = it.equipped ? " [equipped]" : "";
+    pushLine(`  [${it.id}] ${it.name} x${it.qty}${tag}`);
+  }
+}
+
+function renderMap(m) {
+  const cur = m.name || "(no location)";
+  let lines = [`<div class="here-line">You are here: ${escapeHtml(cur)}</div>`];
+  if (m.exits && m.exits.length) {
+    lines.push(`<div class="exit-line">Exits:</div>`);
+    lines.push(m.exits.map((e) =>
+      `<div class="exit-line"><span class="exit-dir">${escapeHtml(e.dir)}</span> ${escapeHtml(e.name)} → ${escapeHtml(e.to)}</div>`
+    ).join(""));
+  } else {
+    lines.push(`<div class="exit-line">Exits: (none)</div>`);
+  }
+  $("mapbody").innerHTML = lines.join("");
+}
+
+function renderMobs(creatures) {
+  if (!creatures || !creatures.length) { $("mobbody").textContent = "-"; return; }
+  $("mobbody").innerHTML = creatures.map((c) =>
+    `${escapeHtml(c.name)}  HP ${c.hp}/${c.maxhp}`).join("<br>");
+}
+
+function renderCommands(m) {
+  const exits = m.exits || [];
+  const dirs = exits.length ? exits.map((e) => e.dir).join("/") : "(none)";
+  const lines = [
+    `look, ${dirs}`,
+    `say <text>, who, inv`,
+    `equip <item>, unequip <weapon|armor>, equipped`,
+    `stats, help, quit`,
+  ];
+  const creatures = m.creatures || [];
+  if (creatures.length) lines.push(`attack ${creatures[0].name}`);
+  if ((m.name || "").trim().toLowerCase() === "town square") {
+    lines.push("train <str|con|dex|magic>");
+    lines.push("shop, buy <item>, sell <item>");
+  }
+  $("cmdsbody").innerHTML = lines.map((l) => escapeHtml(l)).join("<br>");
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  return String(s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
 // ---- command send ----
 function send(line) {
   line = (line || "").trim();
   if (!line || !ws || ws.readyState !== WebSocket.OPEN) return;
-  if (!loggedIn) return; // pre-login is handled by the overlay
+  if (!loggedIn) return;
+  if (line.startsWith("Welcome back, ")) window._who = line.slice(13).replace(/\.$/, "");
   ws.send(JSON.stringify({ line: line }));
   pushLine("> " + line, "you");
   history.push(line); histIdx = history.length;
@@ -335,34 +517,29 @@ function doLogin(mode) {
   if (!name) { $("li-msg").textContent = "enter a name"; return; }
   if (!pass) { $("li-msg").textContent = "enter a password"; return; }
   if (mode === "create") {
-    // New User: the name/password fields already hold the desired account.
-    // Send "new" as the login CHOICE; the server then prompts "New name:"
-    // and "New password:", which handlePrompt answers with these values.
     $("li-msg").textContent = "creating account…";
     loginState = { name, pass, step: "create" };
     ws.send(JSON.stringify({ line: "new" }));
     return;
   }
   $("li-msg").textContent = "logging in…";
-  // Wire flow: send the name first. The server then prompts (structured
-  // `prompt` frame) for the password — handlePrompt() answers it, and a
-  // `room` frame means we're in.
   loginState = { name, pass, step: "name" };
   ws.send(JSON.stringify({ line: name }));
 }
 
 let loginState = null;
-// When a `room` frame arrives during the password step, login succeeded.
 const _origRoute = route;
 route = function (m) {
   _origRoute(m);
   if (loginState && loginState.step === "pass" && m.ch === "room") {
     loggedIn = true;
     loginState = null;
-    $("who").textContent = "as " + $("li-name").value.trim();
+    window._who = $("li-name").value.trim();
+    $("who").textContent = "as " + window._who;
     overlay.classList.add("hidden");
     inputEl.disabled = false;
     inputEl.focus();
+    renderFederation();
   }
 };
 
