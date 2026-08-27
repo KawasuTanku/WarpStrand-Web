@@ -119,4 +119,38 @@ els["li-name"].value = "Zoe";
 doLogin("create");
 assert(sent.length === 0 && /password/.test(els["li-msg"].textContent), "empty password blocked before send");
 
+console.log("\n=== TEST 5: federation chat (fed frame) renders readable ===");
+// Capture appended log lines to prove the frame renders as a readable chat
+// line, NOT the raw "[frame:fed] ..." JSON dump (the old catch-all branch).
+const logLines = [];
+function captureEl() {
+  return {
+    value: "", textContent: "", disabled: false, scrollTop: 0, scrollHeight: 0,
+    innerHTML: "",
+    classList: { add() {}, remove() {}, contains() { return false; } },
+    addEventListener() {}, focus() {}, dataset: {},
+    appendChild() {}, querySelectorAll() { return []; },
+  };
+}
+// Override document.createElement to record textContent of appended lines.
+const _origCreate = global.document.createElement;
+global.document.createElement = function (tag) {
+  const el = _origCreate(tag);
+  const _set = Object.getOwnPropertyDescriptor(el, "textContent");
+  Object.defineProperty(el, "textContent", {
+    get() { return el.__t || ""; },
+    set(v) { el.__t = v; logLines.push(v); },
+  });
+  return el;
+};
+routeMsg({ ch: "fed", kind: "global", text: "[global] Alice@zen: hello world" });
+const rendered = logLines.filter((l) => String(l).includes("Alice@zen"));
+assert(rendered.length === 1 && rendered[0] === "[global] Alice@zen: hello world",
+       "fed global frame renders as readable chat line");
+assert(!logLines.some((l) => String(l).startsWith("[frame:fed]")),
+       "fed frame does NOT fall through to raw JSON dump");
+// Non-global fed event handled gracefully too.
+routeMsg({ ch: "fed", kind: "notify", text: "incoming mail" });
+assert(logLines.some((l) => String(l) === "[fed] incoming mail"),
+       "non-global fed event rendered via [fed] prefix");
 console.log("\nALL TESTS PASSED");

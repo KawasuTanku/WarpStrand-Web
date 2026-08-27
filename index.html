@@ -216,6 +216,15 @@ function route(m) {
   if (ch === "room")    { renderRoom(m); return; }
   if (ch === "stats")   { renderStats(m); return; }
   if (ch === "mail")    { pushLine("[mail] " + (m.event || ""), "sys"); return; }
+  if (ch === "fed") {
+    if (m.kind === "global" && m.text) {
+      // Federation global chat (FEDERATION.md §9): "[global] name@world: msg"
+      pushLine(m.text, "sys"); return;
+    }
+    // Other federation events (mail notice, friend, notify) — show compactly.
+    if (m.text) { pushLine("[fed] " + m.text, "sys"); return; }
+    return;
+  }
   if (ch === "pong")    { return; }
   // Server asks a question mid-flow (e.g. the password prompt during login,
   // or the "New name:" prompt when creating an account). The prompt frame is
